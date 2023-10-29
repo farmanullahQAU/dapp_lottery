@@ -1,4 +1,3 @@
-
 // contract Lottery {
 //     address public manager;
 //     address[] public players;
@@ -66,19 +65,14 @@
 pragma solidity >=0.4.22 <0.8.21;
 
 contract Lottery {
-
-
-    struct Player{
-
+    struct Player {
         string playerName;
         bool isPlayer;
-bool isWinner;
-    
+        bool isWinner;
     }
-    address immutable public manager;
+    address public immutable manager;
     mapping(address => Player) public players;
     address[] addresses;
-
 
     uint public totalPlayers;
 
@@ -90,29 +84,27 @@ bool isWinner;
     function enter(string memory playerName) public payable validateAmount {
         require(!players[msg.sender].isPlayer, "Already Player");
 
-        players[msg.sender]= Player(playerName, true,false);
+        players[msg.sender] = Player(playerName, true, false);
         addresses.push(msg.sender);
 
-        totalPlayers+=1;
+        totalPlayers += 1;
     }
-
 
     // Function to pick a winner
     function pickWinner() public restricted {
-        require(totalPlayers==3, "Atleast 3 players to pick winner");
+        require(totalPlayers == 3, "Atleast 3 players to pick winner");
         // Generate a pseudo-random number based on the block's timestamp
-        uint index = uint(keccak256(abi.encodePacked(block.timestamp, addresses)))%totalPlayers;
+        uint index = uint(
+            keccak256(abi.encodePacked(block.timestamp, addresses))
+        ) % totalPlayers;
 
-        address  winnerAddress=addresses[index];
+        address winnerAddress = addresses[index];
 
-uint balance=address(this).balance;
-    payable(winnerAddress).transfer(balance);
+        uint balance = address(this).balance;
+        payable(winnerAddress).transfer(balance);
 
-    players[winnerAddress].isWinner=true;
- 
+        players[winnerAddress].isWinner = true;
     }
-
-
 
     // Modifier to restrict access to the manager
     modifier restricted() {
@@ -125,18 +117,19 @@ uint balance=address(this).balance;
 
     // Modifier to validate the amount
     modifier validateAmount() {
-        require(msg.value == 1 ether, "Minimum contribution is 0.001 ether");
+        require(
+            msg.value >= 0.001 ether,
+            "Minimum contribution is 0.001 ether"
+        );
         _;
     }
 
-
-   function totalBalance()public view returns(uint) {
-
-return address(this).balance;
+    function totalBalance() public view returns (uint) {
+        return address(this).balance;
     }
 
-   // Function to get the total mapping
-    function getTotalMapping() public view returns ( Player[] memory) {
+    // Function to get the total mapping
+    function getTotalMapping() public view returns (Player[] memory) {
         uint256 length = addresses.length;
         Player[] memory playerData = new Player[](length);
         for (uint256 i = 0; i < length; i++) {
@@ -145,4 +138,3 @@ return address(this).balance;
         return playerData;
     }
 }
-

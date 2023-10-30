@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:web3modal_flutter/services/w3m_service/w3m_service.dart';
+import 'package:web3modal_flutter/web3modal_flutter.dart';
+import 'package:web3modal_flutter/widgets/web3modal_provider.dart';
 
 class HomeController extends GetxController {
   final TextEditingController addressController = TextEditingController(
@@ -18,7 +21,8 @@ class HomeController extends GetxController {
   Web3Client? client;
   String rpcUrl =
       "https://sepolia.infura.io/v3/8d21c6343f4a4797b4896a3e2aa677e6";
-
+  W3MService? w3mService;
+  Web3App? web3app;
   List<dynamic> players = [];
 
   @override
@@ -96,7 +100,51 @@ class HomeController extends GetxController {
   pickWinner() async {
     await contractFunction("pickWinner", [], addressController.text, null);
   }
+
+  printD() async {
+    final aa = await web3app?.connect();
+
+    print(aa?.uri);
+  }
+
+  intWalletConnect() async {
+    w3mService = W3MService(
+      projectId: '5c0084b2871e8713252aa018c78e9a52',
+      metadata: const PairingMetadata(
+        name: 'Web3Modal Flutter Example',
+        description: 'Web3Modal Flutter Example',
+        url: 'https://www.walletconnect.com/',
+        icons: ['https://walletconnect.com/walletconnect-logo.png'],
+        redirect: Redirect(
+          native: 'flutterdapp://',
+          universal: 'https://www.walletconnect.com',
+        ),
+      ),
+    );
+    w3mService?.init();
+
+    print(w3mService?.connectResponse.toString());
+    web3app = await Web3App.createInstance(
+      projectId: "5c0084b2871e8713252aa018c78e9a52",
+      metadata: const PairingMetadata(
+        name: 'Web3Modal Flutter Example',
+        description: 'Web3Modal Flutter Example',
+        url: 'https://www.walletconnect.com/',
+        icons: ['https://web3modal.com/images/rpc-illustration.png'],
+        redirect: Redirect(
+          native: 'flutterdapp://',
+          universal: 'https://www.walletconnect.com',
+        ),
+      ),
+    );
+    web3app?.init();
+    final provider = await web3app!.connect();
+
+    print(provider.toString());
+    update();
+  }
 }
+
 
 // data() {
 //   Future<DeployedContract> loadContract() async {

@@ -3,8 +3,9 @@
 import 'package:dapp2/homeController.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:web3dart/web3dart.dart';
-import 'package:flutter/services.dart';
+import 'package:web3modal_flutter/web3modal_flutter.dart';
+import 'package:web3modal_flutter/widgets/buttons/connect_button.dart';
+import 'package:web3modal_flutter/widgets/w3m_connect_wallet_button.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,11 +34,12 @@ class HomeScreen extends StatelessWidget {
     return GetBuilder<HomeController>(
       builder: (_) => Scaffold(
         floatingActionButton: FloatingActionButton(
-            onPressed: controller.getTotalPlayers,
+            onPressed: controller.intWalletConnect,
             child: const Icon(Icons.touch_app_outlined)),
         appBar: AppBar(
           title: const Text('GetX Simple Form'),
         ),
+        //f4db5f7f9cb31f768245dec6c9472657ca6ac6b5dd74cd9d28634ab7e9e5487b
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -52,6 +54,18 @@ class HomeScreen extends StatelessWidget {
                 onPressed: controller.enterLottery,
                 child: const Text('Participate'),
               ),
+              ElevatedButton(
+                onPressed: controller.printD,
+                child: const Text('sss'),
+              ),
+              if (controller.w3mService != null)
+                Column(
+                  children: [
+                    W3MNetworkSelectButton(service: controller.w3mService!),
+                    W3MConnectWalletButton(service: controller.w3mService!),
+                    W3MAccountButton(service: controller.w3mService!)
+                  ],
+                ),
               Obx(() => Text(
                     controller.greeting.value,
                     style: const TextStyle(fontSize: 20),

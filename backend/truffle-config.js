@@ -42,10 +42,15 @@
 
 
 
+// const HDWalletProvider = require("@truffle/hdwallet-provider");
+// const MNEMONIC = "diary flame morning indicate cream either border offer emerge strategy vast start";
+
+require("dotenv").config({ path: './../.env' });
+console.log(process.env.MNEMONIC); // Check if MNEMONIC is loaded
+console.log(process.env.INFURA_API_KEY);
+
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-const MNEMONIC = "diary flame morning indicate cream either border offer emerge strategy vast start";
-
-
+// const { INFURA_API_KEY, MNEMONIC } = process.env;
 
 
 module.exports = {
@@ -85,7 +90,7 @@ module.exports = {
         // Useful for deploying to a public network.
         // Note: It's important to wrap the provider as a function to ensure truffle uses a new provider every time.
         sepolia: {
-            provider: () => new HDWalletProvider(MNEMONIC, `https://sepolia.infura.io/v3/8d21c6343f4a4797b4896a3e2aa677e6`),
+            provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.INFURA_API_KEY),
             network_id: 11155111,       // Goerli's id
             confirmations: 2,    // # of confirmations to wait between deployments. (default: 0)
             timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)

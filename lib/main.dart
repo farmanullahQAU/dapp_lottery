@@ -57,7 +57,11 @@ class HomeScreen extends StatelessWidget {
                 child: const Text('Participate'),
               ),
               ElevatedButton(
-                onPressed: controller.printD,
+                onPressed: () {
+                  Get.to(() => SSS(
+                        swapTheme: () {},
+                      ));
+                },
                 child: const Text('sss'),
               ),
               if (controller.w3mService != null)

@@ -37,8 +37,10 @@ dependencies:
   cupertino_icons: ^1.0.2
   web3dart: ^2.7.1
   get: ^4.6.6
-  http: ^1.1.0
+  http: 
   flutter_dotenv: ^5.1.0
+  flutter_inappwebview: ^5.8.0
+  walletconnect_flutter_v2: ^2.1.8
   web3modal_flutter: ^3.0.0-beta13
 
 dev_dependencies:

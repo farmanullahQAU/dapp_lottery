@@ -2,8 +2,8 @@
 
 import 'package:dapp2/homeController.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
-import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'package:web3modal_flutter/widgets/buttons/connect_button.dart';
 import 'package:web3modal_flutter/widgets/w3m_connect_wallet_button.dart';
 
@@ -34,7 +34,9 @@ class HomeScreen extends StatelessWidget {
     return GetBuilder<HomeController>(
       builder: (_) => Scaffold(
         floatingActionButton: FloatingActionButton(
-            onPressed: controller.intWalletConnect,
+            onPressed: () {
+              controller.initWallet();
+            },
             child: const Icon(Icons.touch_app_outlined)),
         appBar: AppBar(
           title: const Text('GetX Simple Form'),
@@ -61,9 +63,10 @@ class HomeScreen extends StatelessWidget {
               if (controller.w3mService != null)
                 Column(
                   children: [
-                    W3MNetworkSelectButton(service: controller.w3mService!),
-                    W3MConnectWalletButton(service: controller.w3mService!),
-                    W3MAccountButton(service: controller.w3mService!)
+                    W3MConnectWalletButton(
+                      service: controller.w3mService!,
+                      state: ConnectButtonState.none,
+                    ),
                   ],
                 ),
               Obx(() => Text(
@@ -82,6 +85,55 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class INWEBView extends StatefulWidget {
+  const INWEBView({super.key});
+
+  @override
+  State<INWEBView> createState() => _INWEBViewState();
+}
+
+class _INWEBViewState extends State<INWEBView> {
+  InAppWebViewController? _webViewController;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: InAppWebView(
+        initialUrlRequest:
+            URLRequest(url: Uri.parse('https://example.walletconnect.org')),
+        initialOptions: InAppWebViewGroupOptions(
+          crossPlatform: InAppWebViewOptions(
+            useShouldOverrideUrlLoading: true,
+          ),
+        ),
+        onWebViewCreated: (controller) {
+          _webViewController = controller;
+        },
+        shouldOverrideUrlLoading: (controller, navAction) async {
+          final url = navAction.request.url.toString();
+          debugPrint('URL $url');
+          if (url.contains('wc?uri=')) {
+            final wcUri = Uri.parse(
+                Uri.decodeFull(Uri.parse(url).queryParameters['uri']!));
+
+            return NavigationActionPolicy.CANCEL;
+          } else if (url.startsWith('wc:')) {
+            return NavigationActionPolicy.CANCEL;
+          } else {
+            return NavigationActionPolicy.ALLOW;
+          }
+        },
       ),
     );
   }

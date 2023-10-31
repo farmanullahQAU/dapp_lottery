@@ -1,14 +1,30 @@
 // home_controller.dart
 import 'dart:convert';
 
+import 'package:dapp2/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
+import 'package:walletconnect_flutter_v2/apis/auth_api/models/auth_client_models.dart';
+import 'package:walletconnect_flutter_v2/apis/core/pairing/utils/pairing_models.dart';
+import 'package:walletconnect_flutter_v2/apis/sign_api/models/json_rpc_models.dart';
+import 'package:walletconnect_flutter_v2/apis/sign_api/models/proposal_models.dart';
+import 'package:walletconnect_flutter_v2/apis/sign_api/models/session_models.dart';
+import 'package:walletconnect_flutter_v2/apis/sign_api/models/sign_client_models.dart';
+import 'package:walletconnect_flutter_v2/apis/web3app/web3app.dart';
+import 'package:walletconnect_flutter_v2/walletconnect_flutter_v2.dart';
+import 'package:web3dart/web3dart.dart';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:web3modal_flutter/services/w3m_service/w3m_service.dart';
-import 'package:web3modal_flutter/web3modal_flutter.dart';
-import 'package:web3modal_flutter/widgets/web3modal_provider.dart';
 
 class HomeController extends GetxController {
   final TextEditingController addressController = TextEditingController(
@@ -22,7 +38,8 @@ class HomeController extends GetxController {
   String rpcUrl =
       "https://sepolia.infura.io/v3/8d21c6343f4a4797b4896a3e2aa677e6";
   W3MService? w3mService;
-  Web3App? web3app;
+  Uri? uri;
+  dynamic res;
   List<dynamic> players = [];
 
   @override
@@ -102,13 +119,11 @@ class HomeController extends GetxController {
   }
 
   printD() async {
-    final aa = await web3app?.connect();
-
-    print(aa?.uri);
+    print(res);
   }
 
-  intWalletConnect() async {
-    w3mService = W3MService(
+  initWallet() async {
+    final web3App = await Web3App.createInstance(
       projectId: '5c0084b2871e8713252aa018c78e9a52',
       metadata: const PairingMetadata(
         name: 'Web3Modal Flutter Example',
@@ -121,107 +136,27 @@ class HomeController extends GetxController {
         ),
       ),
     );
-    w3mService?.init();
 
-    print(w3mService?.connectResponse.toString());
-    web3app = await Web3App.createInstance(
-      projectId: "5c0084b2871e8713252aa018c78e9a52",
-      metadata: const PairingMetadata(
-        name: 'Web3Modal Flutter Example',
-        description: 'Web3Modal Flutter Example',
-        url: 'https://www.walletconnect.com/',
-        icons: ['https://web3modal.com/images/rpc-illustration.png'],
-        redirect: Redirect(
-          native: 'flutterdapp://',
-          universal: 'https://www.walletconnect.com',
-        ),
+    w3mService = W3MService(web3App: web3App);
+    update();
+
+    await w3mService?.init();
+
+    await w3mService!.launchConnectedWallet();
+    update();
+
+    res = await w3mService!.web3App?.request(
+      topic: w3mService!.session!.topic,
+      chainId: 'eip155:1',
+      request: SessionRequestParams(
+        method: 'transferFrom',
+        params: [
+          '0xdeadbeef', // The address of the account that you are transferring Ether from.
+          '0x1234567890abcdef1234567890abcdef12345678', // The address of the account that you are transferring Ether to.
+          BigInt.from(
+              1000000000000000000), // The amount of Ether that you want to transfer.
+        ],
       ),
     );
-    web3app?.init();
-    final provider = await web3app!.connect();
-
-    print(provider.toString());
-    update();
   }
 }
-
-
-// data() {
-//   Future<DeployedContract> loadContract() async {
-//     String abi = await rootBundle.loadString('assets/abi.json');
-//     String contractAddress = "";
-//     final contract = DeployedContract(ContractAbi.fromJson(abi, 'Election'),
-//         EthereumAddress.fromHex(contractAddress));
-//     return contract;
-//   }
-
-//   Future<String> callFunction(String funcname, List<dynamic> args,
-//       Web3Client ethClient, String privateKey) async {
-//     EthPrivateKey credentials = EthPrivateKey.fromHex(privateKey);
-//     DeployedContract contract = await loadContract();
-//     final ethFunction = contract.function(funcname);
-//     final result = await ethClient.sendTransaction(
-//         credentials,
-//         Transaction.callContract(
-//           contract: contract,
-//           function: ethFunction,
-//           parameters: args,
-//         ),
-//         chainId: null,
-//         fetchChainIdFromNetworkId: true);
-//     return result;
-//   }
-
-//   Future<String> startElection(String name, Web3Client ethClient) async {
-//     var response = await callFunction(
-//         'startElection', [name], ethClient, owner_private_key);
-//     print('Election started successfully');
-//     return response;
-//   }
-
-//   Future<String> addCandidate(String name, Web3Client ethClient) async {
-//     var response = await callFunction(
-//         'addCandidate', [name], ethClient, owner_private_key);
-//     print('Candidate added successfully');
-//     return response;
-//   }
-
-//   Future<String> authorizeVoter(String address, Web3Client ethClient) async {
-//     var response = await callFunction('authorizeVoter',
-//         [EthereumAddress.fromHex(address)], ethClient, owner_private_key);
-//     print('Voter Authorized successfully');
-//     return response;
-//   }
-
-//   Future<List> getCandidatesNum(Web3Client ethClient) async {
-//     List<dynamic> result = await ask('getNumCandidates', [], ethClient);
-//     return result;
-//   }
-
-//   Future<List> getTotalVotes(Web3Client ethClient) async {
-//     List<dynamic> result = await ask('getTotalVotes', [], ethClient);
-//     return result;
-//   }
-
-//   Future<List> candidateInfo(int index, Web3Client ethClient) async {
-//     List<dynamic> result =
-//         await ask('candidateInfo', [BigInt.from(index)], ethClient);
-//     return result;
-//   }
-
-//   Future<List<dynamic>> ask(
-//       String funcName, List<dynamic> args, Web3Client ethClient) async {
-//     final contract = await loadContract();
-//     final ethFunction = contract.function(funcName);
-//     final result =
-//         ethClient.call(contract: contract, function: ethFunction, params: args);
-//     return result;
-//   }
-
-//   Future<String> vote(int candidateIndex, Web3Client ethClient) async {
-//     var response = await callFunction(
-//         "vote", [BigInt.from(candidateIndex)], ethClient, voter_private_key);
-//     print("Vote counted successfully");
-//     return response;
-//   }
-// }

@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:dapp2/main.dart';
+import 'package:dapp2/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -45,14 +46,15 @@ class HomeController extends GetxController {
       "https://sepolia.infura.io/v3/8d21c6343f4a4797b4896a3e2aa677e6";
   W3MService? w3mService;
   Uri? uri;
+  double? balance = 0;
   dynamic res;
-  List<dynamic> players = [];
+  List<Player> players = [];
 
   @override
   void onInit() async {
     await initData();
-    getTotalPlayers();
-
+    await getTotalPlayers();
+    await totalBalance();
     listenToBlocks();
 
     super.onInit();
@@ -95,7 +97,13 @@ class HomeController extends GetxController {
         contract: contract!,
         function: contract!.function("getTotalMapping"),
         params: []).then((result) {
-      print(result[0]);
+      for (var element in result[0]) {
+        final map = element.asMap();
+
+        players.add(Player.fromMap(map));
+
+        update();
+      }
     });
   }
 
@@ -105,12 +113,11 @@ class HomeController extends GetxController {
       await contractFunction(
           "enter", [nameController.text], addressController.text, value);
     } catch (error) {
-      
       Get.snackbar("Error", error.toString());
     }
   }
 
-  totalBalance() async {
+  Future totalBalance() async {
     final ethFunction = contract!.function("totalBalance");
 
     final res = await client!.call(
@@ -119,7 +126,10 @@ class HomeController extends GetxController {
       params: [],
     );
 
-    print(res);
+    final val = BigInt.parse(res[0].toString());
+    balance = double.parse(val.toString());
+
+    update();
   }
 
   pickWinner() async {

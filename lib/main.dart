@@ -43,32 +43,45 @@ class HomeScreen extends StatelessWidget {
         ),
         //f4db5f7f9cb31f768245dec6c9472657ca6ac6b5dd74cd9d28634ab7e9e5487b
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: controller.nameController,
-                decoration: const InputDecoration(labelText: 'Enter your name'),
-              ),
-              TextField(
-                controller: controller.addressController,
-                decoration:
-                    const InputDecoration(labelText: 'Paste your address'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: controller.enterLottery,
-                child: const Text('Participate'),
-              ),
-              // ListView.builder(
-              //     shrinkWrap: true,
-              //     itemCount: controller.players.length,
-              //     itemBuilder: (_, index) {
-              //       final rs = controller.players[index];
-
-              //       return Text(rs.toString());
-              //     })
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(controller.balance.toString()),
+                TextField(
+                  controller: controller.nameController,
+                  decoration:
+                      const InputDecoration(labelText: 'Enter your name'),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                TextField(
+                  controller: controller.addressController,
+                  decoration:
+                      const InputDecoration(labelText: 'Paste your address'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: controller.enterLottery,
+                  child: const Text('Participate'),
+                ),
+                ListView(
+                  shrinkWrap: true,
+                  children: controller.players
+                      .map((e) => ListTile(
+                            leading: CircleAvatar(
+                                child: Text(e.playerName.characters.first
+                                    .toUpperCase())),
+                            title: Text(e.playerName),
+                            trailing:
+                                Text(e.isWinner == true ? "Winner" : ".."),
+                          ))
+                      .toList(),
+                )
+              ],
+            ),
           ),
         ),
       ),

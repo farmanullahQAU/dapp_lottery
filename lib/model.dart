@@ -9,19 +9,11 @@ class Player {
     required this.isWinner,
   });
 
-  factory Player.fromMap(Map<String, dynamic> map) {
+  factory Player.fromMap(dynamic map) {
     return Player(
-      playerName: map['playerName'] as String,
-      isPlayer: map['isPlayer'] as bool,
-      isWinner: map['isWinner'] as bool,
+      playerName: map[0] as String,
+      isPlayer: map[1] as bool,
+      isWinner: map[2] as bool,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'playerName': playerName,
-      'isPlayer': isPlayer,
-      'isWinner': isWinner,
-    };
   }
 }

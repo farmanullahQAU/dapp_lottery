@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
       builder: (_) => Scaffold(
         floatingActionButton: FloatingActionButton(
             onPressed: () {
-              controller.initWallet();
+              controller.getTotalPlayers();
             },
             child: const Icon(Icons.touch_app_outlined)),
         appBar: AppBar(
@@ -47,6 +47,10 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
+                controller: controller.nameController,
+                decoration: const InputDecoration(labelText: 'Enter your name'),
+              ),
+              TextField(
                 controller: controller.addressController,
                 decoration:
                     const InputDecoration(labelText: 'Paste your address'),
@@ -56,36 +60,14 @@ class HomeScreen extends StatelessWidget {
                 onPressed: controller.enterLottery,
                 child: const Text('Participate'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Get.to(() => SSS(
-                        swapTheme: () {},
-                      ));
-                },
-                child: const Text('sss'),
-              ),
-              if (controller.w3mService != null)
-                Column(
-                  children: [
-                    W3MConnectWalletButton(
-                      service: controller.w3mService!,
-                      state: ConnectButtonState.none,
-                    ),
-                  ],
-                ),
-              Obx(() => Text(
-                    controller.greeting.value,
-                    style: const TextStyle(fontSize: 20),
-                  )),
-              Text(controller.players.length.toString()),
-              ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: controller.players.length,
-                  itemBuilder: (_, index) {
-                    final rs = controller.players[index];
+              // ListView.builder(
+              //     shrinkWrap: true,
+              //     itemCount: controller.players.length,
+              //     itemBuilder: (_, index) {
+              //       final rs = controller.players[index];
 
-                    return Text(rs.toString());
-                  })
+              //       return Text(rs.toString());
+              //     })
             ],
           ),
         ),

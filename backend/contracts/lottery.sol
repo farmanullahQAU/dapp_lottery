@@ -60,8 +60,8 @@
 //         // This function allows the contract to accept Ether without a specific function call.
 //     }
 // }
-// SPDX-License-Identifier: MIT
 
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.21;
 
 contract Lottery {
@@ -70,29 +70,41 @@ contract Lottery {
         bool isPlayer;
         bool isWinner;
     }
+
     address public immutable manager;
     mapping(address => Player) public players;
     address[] addresses;
 
     uint public totalPlayers;
 
+    // Define an event for when a player enters the lottery
+    event PlayerEntered(address indexed playerAddress, string playerName);
+
+    // Define an event for when a winner is picked
+    event WinnerPicked(address winnerAddress, uint prizeAmount);
+
     constructor() {
         manager = msg.sender;
     }
 
-    // Function to enter the lottery
     function enter(string memory playerName) public payable validateAmount {
-        require(!players[msg.sender].isPlayer, "Already Player");
+        require(!players[msg.sender].isPlayer, "Already a player");
 
         players[msg.sender] = Player(playerName, true, false);
         addresses.push(msg.sender);
 
         totalPlayers += 1;
+
+        // Emit the PlayerEntered event when a player enters the lottery
+        emit PlayerEntered(msg.sender, playerName);
     }
 
-    // Function to pick a winner
     function pickWinner() public restricted {
-        require(totalPlayers == 3, "Atleast 3 players to pick winner");
+        require(
+            totalPlayers >= 3,
+            "At least 3 players required to pick a winner"
+        );
+
         // Generate a pseudo-random number based on the block's timestamp
         uint index = uint(
             keccak256(abi.encodePacked(block.timestamp, addresses))
@@ -101,12 +113,21 @@ contract Lottery {
         address winnerAddress = addresses[index];
 
         uint balance = address(this).balance;
+
+        // Transfer the prize amount to the winner
         payable(winnerAddress).transfer(balance);
 
+        // Mark the winner
         players[winnerAddress].isWinner = true;
+
+        // Emit the WinnerPicked event when a winner is picked
+        emit WinnerPicked(winnerAddress, balance);
+
+        // Reset the players and addresses array
+        delete addresses;
+        totalPlayers = 0;
     }
 
-    // Modifier to restrict access to the manager
     modifier restricted() {
         require(
             msg.sender == manager,
@@ -115,7 +136,6 @@ contract Lottery {
         _;
     }
 
-    // Modifier to validate the amount
     modifier validateAmount() {
         require(
             msg.value >= 0.001 ether,
@@ -128,7 +148,6 @@ contract Lottery {
         return address(this).balance;
     }
 
-    // Function to get the total mapping
     function getTotalMapping() public view returns (Player[] memory) {
         uint256 length = addresses.length;
         Player[] memory playerData = new Player[](length);

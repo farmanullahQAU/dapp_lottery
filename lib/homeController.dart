@@ -118,11 +118,11 @@ class HomeController extends GetxController {
   }
 
   Future totalBalance() async {
-    final ethFunction = contract!.function("totalBalance");
+    final funciton = contract!.function("totalBalance");
 
     final res = await client!.call(
       contract: contract!,
-      function: ethFunction,
+      function: funciton,
       params: [],
     );
 
@@ -133,8 +133,34 @@ class HomeController extends GetxController {
   }
 
   pickWinner() async {
+
+    try{
+
     await contractFunction("pickWinner", [], addressController.text, null);
+
+
+
+    }
+    catch(error){
+
+      Get.snackbar("Error", error.toString());
+
+    }
   }
+
+  getWinner(){
+
+    final function=contract?.function("getWinner");
+
+    this.res=this.client?.call(contract: this.contract!, function:function! , params: []);
+
+Player winner=Player.fromMap()
+  
+
+
+  }
+
+  
 
   printD() async {
     print(res);
@@ -184,6 +210,8 @@ class HomeController extends GetxController {
         FilterOptions.events(contract: contract!, event: addPlayerEvent!),
       );
       if (events.isNotEmpty) {
+
+        print("FFFFFFF");
         getTotalPlayers();
       }
       // for (var log in events) {

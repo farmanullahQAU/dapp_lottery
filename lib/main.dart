@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
       builder: (_) => Scaffold(
         floatingActionButton: FloatingActionButton(
             onPressed: () {
-              controller.getTotalPlayers();
+              controller.pickWinner();
             },
             child: const Icon(Icons.touch_app_outlined)),
         appBar: AppBar(
@@ -71,6 +71,7 @@ class HomeScreen extends StatelessWidget {
                   shrinkWrap: true,
                   children: controller.players
                       .map((e) => ListTile(
+                        tileColor: e.isWinner?Colors.green:null,
                             leading: CircleAvatar(
                                 child: Text(e.playerName.characters.first
                                     .toUpperCase())),

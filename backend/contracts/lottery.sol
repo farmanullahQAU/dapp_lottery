@@ -68,14 +68,14 @@ contract Lottery {
     struct Player {
         string playerName;
         bool isPlayer;
-        bool isWinner;
+        
     }
 
     address public immutable manager;
+    address public  winner;
     mapping(address => Player) public players;
     address[] addresses;
 
-    uint public totalPlayers;
 
     // Define an event for when a player enters the lottery
     event PlayerEntered(address indexed playerAddress, string playerName);
@@ -90,10 +90,9 @@ contract Lottery {
     function enter(string memory playerName) public payable validateAmount {
         require(!players[msg.sender].isPlayer, "Already a player");
 
-        players[msg.sender] = Player(playerName, true, false);
+        players[msg.sender] = Player(playerName, true);
         addresses.push(msg.sender);
 
-        totalPlayers += 1;
 
         // Emit the PlayerEntered event when a player enters the lottery
         emit PlayerEntered(msg.sender, playerName);
@@ -101,31 +100,30 @@ contract Lottery {
 
     function pickWinner() public restricted {
         require(
-            totalPlayers >= 3,
+            addresses.length >= 3,
             "At least 3 players required to pick a winner"
         );
 
         // Generate a pseudo-random number based on the block's timestamp
         uint index = uint(
             keccak256(abi.encodePacked(block.timestamp, addresses))
-        ) % totalPlayers;
+        ) % (addresses.length);
 
-        address winnerAddress = addresses[index];
+        winner = addresses[index];
 
         uint balance = address(this).balance;
 
         // Transfer the prize amount to the winner
-        payable(winnerAddress).transfer(balance);
+        payable(winner).transfer(balance);
 
-        // Mark the winner
-        players[winnerAddress].isWinner = true;
+
 
         // Emit the WinnerPicked event when a winner is picked
-        emit WinnerPicked(winnerAddress, balance);
+        emit WinnerPicked(winner, balance);
 
         // Reset the players and addresses array
         delete addresses;
-        totalPlayers = 0;
+     
     }
 
     modifier restricted() {
@@ -155,5 +153,12 @@ contract Lottery {
             playerData[i] = players[addresses[i]];
         }
         return playerData;
+    }
+
+    function getWinner() public view returns (Player memory){
+
+        return players[winner];
+
+
     }
 }

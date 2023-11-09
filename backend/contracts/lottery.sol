@@ -67,7 +67,9 @@ pragma solidity >=0.4.22 <0.8.21;
 contract Lottery {
     struct Player {
         string playerName;
+        address playerAddress;
         bool isPlayer;
+
         
     }
 
@@ -78,24 +80,24 @@ contract Lottery {
 
 
     // Define an event for when a player enters the lottery
-    event PlayerEntered(address indexed playerAddress, string playerName);
+    event PlayerEntered(Player);
 
     // Define an event for when a winner is picked
-    event WinnerPicked(address winnerAddress, uint prizeAmount);
+    event WinnerPicked(Player, uint prizeAmount);
 
     constructor() {
         manager = msg.sender;
     }
 
     function enter(string memory playerName) public payable validateAmount {
-        require(!players[msg.sender].isPlayer, "Already a player");
+        require(!players[msg.sender].isPlayer, "You are already a player");
 
-        players[msg.sender] = Player(playerName, true);
+        players[msg.sender] = Player(playerName,msg.sender, true);
         addresses.push(msg.sender);
 
 
         // Emit the PlayerEntered event when a player enters the lottery
-        emit PlayerEntered(msg.sender, playerName);
+        emit PlayerEntered(players[msg.sender]);
     }
 
     function pickWinner() public restricted {
@@ -104,7 +106,7 @@ contract Lottery {
             "At least 3 players required to pick a winner"
         );
 
-        // Generate a pseudo-random number based on the block's timestamp
+        
         uint index = uint(
             keccak256(abi.encodePacked(block.timestamp, addresses))
         ) % (addresses.length);
@@ -119,7 +121,7 @@ contract Lottery {
 
 
         // Emit the WinnerPicked event when a winner is picked
-        emit WinnerPicked(winner, balance);
+        emit WinnerPicked(players[winner], balance);
 
         // Reset the players and addresses array
         delete addresses;
@@ -155,10 +157,5 @@ contract Lottery {
         return playerData;
     }
 
-    function getWinner() public view returns (Player memory){
-
-        return players[winner];
-
-
-    }
+  
 }

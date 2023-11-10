@@ -1,6 +1,4 @@
-// home_controller.dart
 import 'dart:convert';
-
 import 'package:dapp2/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +9,6 @@ import 'package:http/http.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
 
-
 import 'package:web3modal_flutter/services/w3m_service/w3m_service.dart';
 
 class HomeController extends GetxController {
@@ -20,7 +17,7 @@ class HomeController extends GetxController {
 
   final TextEditingController nameController = TextEditingController(text: "");
   final RxString greeting = ''.obs;
-bool isLoading=false;
+  RxBool isLoading = false.obs;
   dynamic abiJson;
   String? contractAddress = "0x438B8A1c89482A7a0426DacAD25A0928F5B55211";
   // "f4db5f7f9cb31f768245dec6c9472657ca6ac6b5dd74cd9d28634ab7e9e5487b"
@@ -29,59 +26,50 @@ bool isLoading=false;
   ContractEvent? winnerPickedEvent;
 
   Web3Client? client;
-  String rpcUrl =
-      "${dotenv.env['INFURA_URL']}";
+  String rpcUrl = "${dotenv.env['INFURA_URL']}";
   W3MService? w3mService;
   Uri? uri;
   double? balance = 0;
-    EthereumAddress? manager;
+  EthereumAddress? manager;
 
   dynamic res;
   List<Player> players = [];
 
   @override
   void onInit() async {
-  
+    await Future.wait([
+      initData(),
+    ]);
 
-    await   initData();
-   await  getTotalPlayers();
-    await getManager();
-    await totalBalance();
-  
     listToEvent();
     listToPickWinnerEvent();
-
 
     super.onInit();
   }
 
   Future initData() async {
-    isLoading=true;
-try{
-    final abiString =
-        await rootBundle.loadString("backend/build/contracts/Lottery.json");
+    try {
+      rootBundle
+          .loadString("backend/build/contracts/Lottery.json")
+          .then((abiString) async {
+        abiJson = jsonDecode(abiString);
 
-    abiJson = jsonDecode(abiString);
+        client = Web3Client(rpcUrl, Client());
 
-    client = Web3Client(rpcUrl, Client());
+        contract = DeployedContract(
+            ContractAbi.fromJson(jsonEncode(abiJson["abi"]), 'Lottery'),
+            EthereumAddress.fromHex(contractAddress!));
 
-    contract = DeployedContract(
-        ContractAbi.fromJson(jsonEncode(abiJson["abi"]), 'Lottery'),
-        EthereumAddress.fromHex(contractAddress!));
-
-    addPlayerEvent = contract?.event("PlayerEntered");
-    winnerPickedEvent = contract?.event("WinnerPicked");
-
-}
-catch(err){
-
-  Get.snackbar("Error", err.toString());
-}
-
-    isLoading=false;
+        addPlayerEvent = contract?.event("PlayerEntered");
+        winnerPickedEvent = contract?.event("WinnerPicked");
+        await getTotalPlayers();
+        await getManager();
+        await totalBalance();
+      });
+    } catch (err) {
+      Get.snackbar("Error", err.toString());
+    }
   }
-
-  
 
   Future<String> contractFunction(String functionName, List<dynamic> args,
       String publicKey, EtherAmount? contribution) async {
@@ -99,47 +87,54 @@ catch(err){
     update();
     return result;
   }
-Future getManager()async{
 
-   await this.client?.call(
-  function: contract!.function('manager'),
-  params: [], contract: this.contract!,
-).then((result) {
-
-this.manager=result[0];
-update();
-
-});
-}
-  Future getTotalPlayers() async {
-    await client?.call(
-        contract: contract!,
-        function: contract!.function("getTotalMapping"),
-        params: []).then((result) {
-      for (var element in result[0]) {
-        print(element);
-      
-        final map = element.asMap();
-
-        players.add(Player.fromMap(map));
-
-        update();
-      }
+  Future getManager() async {
+    await client
+        ?.call(
+      function: contract!.function('manager'),
+      params: [],
+      contract: contract!,
+    )
+        .then((result) {
+      manager = result[0];
+      update();
     });
   }
 
+  Future getTotalPlayers() async {
+    try {
+      final result = await client?.call(
+          contract: contract!,
+          function: contract!.function("getTotalMapping"),
+          params: []);
+      if (result != null) {
+        for (var element in result[0]) {
+          print(element);
+          final map = element.asMap();
+          players.add(Player.fromMap(map));
+
+          update();
+        }
+      }
+    } catch (error) {
+      Get.snackbar("Error", error.toString());
+    }
+  }
+
   enterLottery() async {
-    isLoading=true;
+    isLoading.value = true;
 
     try {
       final value = EtherAmount.inWei(BigInt.from(1e15));
       await contractFunction(
           "enter", [nameController.text], addressController.text, value);
     } catch (error) {
+      isLoading.value = false;
+
       Get.snackbar("Error", error.toString());
     }
 
-    isLoading=false;
+    isLoading.value = false;
     update();
   }
 
@@ -152,37 +147,21 @@ update();
       params: [],
     );
 
-   if(res!=null){
-     final weiValue = BigInt.parse("${res[0]}");
-  balance = EtherAmount.fromBigInt(EtherUnit.wei, weiValue)
-      .getValueInUnit(EtherUnit.ether);
-   }
+    if (res != null) {
+      final weiValue = BigInt.parse("${res[0]}");
+      balance = EtherAmount.fromBigInt(EtherUnit.wei, weiValue)
+          .getValueInUnit(EtherUnit.ether);
+    }
 
     update();
   }
 
   pickWinner() async {
-
-    try{
-
-    await contractFunction("pickWinner", [], addressController.text, null);
-
-
-
-    }
-    catch(error){
-
+    try {
+      await contractFunction("pickWinner", [], addressController.text, null);
+    } catch (error) {
       Get.snackbar("Error", error.toString());
-
     }
-  }
-
-
-
-  
-
-  printD() async {
-    print(res);
   }
 
   // initWallet() async {
@@ -246,73 +225,69 @@ update();
   }
 
 */
-  listToEvent(){
+  listToEvent() {
+    client
+        ?.events(FilterOptions.events(
+          contract: contract!,
+          event: addPlayerEvent!,
+        ))
+        .take(1)
+        .listen((event) {
+      final decoded = addPlayerEvent?.decodeResults(event.topics!, event.data!);
 
-  client?.events(FilterOptions.events(
-  contract: this.contract!,
-  event: addPlayerEvent!,
-)).take(1).listen((event) {
-  final decoded = addPlayerEvent?.decodeResults(event.topics!, event.data!);
+      final map = decoded![0].asMap();
 
+      players.add(Player.fromMap(map));
 
-  
+      totalBalance();
 
-      
-        final map = decoded![0].asMap();
-
-        players.add(Player.fromMap(map));
-
-       totalBalance();
-
-  update();
-  
-
-});
-
-
+      update();
+    });
   }
-listToPickWinnerEvent(){
-     client?.events(FilterOptions.events(
-  contract: this.contract!,
-  event: winnerPickedEvent!,
-)).take(1).listen((event) {
-  final decoded = winnerPickedEvent?.decodeResults(event.topics!, event.data!);
 
+  listToPickWinnerEvent() {
+    client
+        ?.events(FilterOptions.events(
+          contract: contract!,
+          event: winnerPickedEvent!,
+        ))
+        .take(1)
+        .listen((event) {
+      final decoded =
+          winnerPickedEvent?.decodeResults(event.topics!, event.data!);
 
-  print("winner picked");
-  print(decoded);
+      final map = decoded![0].asMap();
 
-      
-        final map = decoded![0].asMap();
-
-      
-
-     final winner=Player.fromMap(map);
+      final winner = Player.fromMap(map);
 
       Get.defaultDialog(
-        barrierDismissible: false,
-        
-        title: winner.playerName,content: Column(
-        children: [
-          Icon(Icons.emoji_events,size: 40,),
-          SizedBox(height: 16,),
-          Text("${winner.playerName} has won the lottery. "),
-        ],
-      ),onConfirm: ()async{
+          barrierDismissible: false,
+          title: winner.playerName,
+          content: Column(
+            children: [
+              const Icon(
+                Icons.emoji_events,
+                size: 40,
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              Text("${winner.playerName} has won the lottery. "),
+            ],
+          ),
+          onConfirm: () async {
+            Get.back();
+            await getTotalPlayers();
+            await totalBalance();
+          });
 
-        Get.back();
-        await this.getTotalPlayers();
-       await this.totalBalance();
-      });
+      update();
 
-  update();
-  
-  // Use the values as needed
-  // print('Player entered: $playerName with address $sender');
-});
+      // Use the values as needed
+      // print('Player entered: $playerName with address $sender');
+    });
+  }
 
-
-}
   void handlePlayerEnteredEvent(FilterEvent log) {
     final decodedData = addPlayerEvent!.decodeResults(log.topics!, log.data!);
     // Update the players' list in your Flutter UI with the new player data

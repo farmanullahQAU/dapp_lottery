@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'GetX Simple Form',
+      title: 'Dapp',
       themeMode: ThemeMode.dark,
       theme: ThemeData.dark(useMaterial3: true),
       home: const HomeScreen(),
@@ -44,12 +44,13 @@ class HomeScreen extends StatelessWidget {
                 style: context.textTheme.titleLarge,
               ),
             ),
-            //f4db5f7f9cb31f768245dec6c9472657ca6ac6b5dd74cd9d28634ab7e9e5487b
             body: Stack(
               children: [
                 ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+
+                        
                     SizedBox(
                       width: Get.width * 0.7,
                       child: Card(
@@ -101,7 +102,6 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(
                       height: 32,
                     ),
-                    Text(controller.players.length.toString()),
                     if (controller.players.isNotEmpty)
                       Column(
                         children: controller.players
@@ -120,10 +120,12 @@ class HomeScreen extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 trailing: e.playerAddress == controller.manager
-                                    ? ElevatedButton(
+                                    ? ElevatedButton.icon(
+
+                                      icon: Icon(Icons.touch_app_outlined),
                                         onPressed: controller.pickWinner,
-                                        child: const Icon(
-                                            Icons.touch_app_outlined))
+                                        label: const Text(
+                                            "Pick Winner"))
                                     : null))
                             .toList(),
                       )

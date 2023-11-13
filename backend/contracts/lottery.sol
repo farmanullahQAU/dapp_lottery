@@ -1,67 +1,4 @@
-// contract Lottery {
-//     address public manager;
-//     address[] public players;
 
-//     constructor() {
-//         manager = msg.sender;
-//     }
-
-//     // Function to enter the lottery
-//     function enter() public payable validateAmount {
-//         require(players.length < 3, "Maximum 3 players allowed");
-//         require(!isPlayer(msg.sender), "Player already entered");
-//         players.push(msg.sender);
-//     }
-// function isPlayer(address player) public view returns (bool) {
-//     for (uint i = 0; i < players.length; i++) {
-//         if (players[i] == player) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
-//     // Function to pick a winner
-//     function pickWinner() public restricted {
-//         require(players.length > 0, "No players to pick a winner");
-//         address winner = players[random() % players.length];
-//         uint balance = address(this).balance;
-//         payable(winner).transfer(balance);
-//         players = new address[](0); // Reset the players array
-//     }
-
-//     // Function to get the current players
-//     function getPlayers() public view returns (address[] memory) {
-//         return players;
-//     }
-
-//     // Modifier to restrict access to the manager
-//     modifier restricted() {
-//         require(
-//             msg.sender == manager,
-//             "Only the manager can call this function"
-//         );
-//         _;
-//     }
-//     modifier validateAmount() {
-//         require(msg.value == 0.1 ether, "Minimum contribution is 1 ether");
-//         _;
-//     }
-
-//     // Function to generate a pseudo-random number based on the block's timestamp
-//     function random() private view returns (uint) {
-//         return
-//             uint(
-//                 keccak256(abi.encodePacked(block.timestamp, players, manager))
-//             );
-//     }
-
-//     // Receive function to accept Ether
-//     receive() external payable {
-//         // This function allows the contract to accept Ether without a specific function call.
-//     }
-// }
-
-// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.21;
 
 contract Lottery {
@@ -100,34 +37,34 @@ contract Lottery {
         emit PlayerEntered(players[msg.sender]);
     }
 
-    function pickWinner() public restricted {
-        require(
-            addresses.length >= 3,
-            "At least 3 players required to pick a winner"
-        );
+function pickWinner() public restricted {
+    require(addresses.length >= 3, "At least 3 players required to pick a winner");
 
-        
-        uint index = uint(
-            keccak256(abi.encodePacked(block.timestamp, addresses))
-        ) % (addresses.length);
+   
+    uint index = uint(keccak256(abi.encodePacked(blockhash(block.number - 1)))) % addresses.length;
 
-        winner = addresses[index];
+    winner = addresses[index];
 
-        uint balance = address(this).balance;
+    uint balance = address(this).balance;
 
-        // Transfer the prize amount to the winner
-        payable(winner).transfer(balance);
+    // Transfer the prize amount to the winner
+    payable(winner).transfer(balance);
 
+    // Emit the WinnerPicked event when a winner is picked
+    emit WinnerPicked(players[winner], balance);
 
+    // Reset the players and addresses array
+    resetPlayers();
+}
+  function resetPlayers() public  {
 
-        // Emit the WinnerPicked event when a winner is picked
-        emit WinnerPicked(players[winner], balance);
+ for (uint256 i = 0; i < addresses.length; i++) {
+           delete players[addresses[i]];
+          
 
-        // Reset the players and addresses array
-        delete addresses;
-     
-    }
-
+        }
+         delete addresses;
+  }
     modifier restricted() {
         require(
             msg.sender == manager,

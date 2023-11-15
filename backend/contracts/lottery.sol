@@ -18,10 +18,10 @@ contract Lottery {
 
 
     // Define an event for when a player enters the lottery
-    event PlayerEntered(Player);
+    // event PlayerEntered(Player); //uncomment if you want events when new player enters
 
     // Define an event for when a winner is picked
-    event WinnerPicked(Player, uint prizeAmount);
+ event WinnerPicked(Player, uint prizeAmount); 
 
     constructor() {
         manager = msg.sender;
@@ -35,7 +35,7 @@ contract Lottery {
 
 
         // Emit the PlayerEntered event when a player enters the lottery
-        emit PlayerEntered(players[msg.sender]);
+        // emit PlayerEntered(players[msg.sender]);   // //uncomment if you want events when new player enters
     }
 
 function pickWinner() public restricted {

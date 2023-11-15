@@ -17,7 +17,7 @@ class HomeController extends GetxController {
   final RxString greeting = ''.obs;
   RxBool isLoading = false.obs;
   dynamic abiJson;
-  String? contractAddress = "0xD75C8Fbb0F933bd378e9824865080Ad2f2F1599B";//deployed contract address
+  String? contractAddress = "0xd030488Ae2107695CED467fF369a1f83179fc709";//deployed contract address
   DeployedContract? contract;
   ContractEvent? addPlayerEvent;
   ContractEvent? winnerPickedEvent;
@@ -55,13 +55,14 @@ Future initData() async {
       EthereumAddress.fromHex(contractAddress!),
     );
 
-    addPlayerEvent = contract?.event("PlayerEntered");
     winnerPickedEvent = contract?.event("WinnerPicked");
-   listenToAddPlayerEvent();
+  //  listenToAddPlayerEvent();
     listenToPickWinnerEvent();
+    
     await getTotalPlayers();
-    await getManager();
     await totalBalance();
+    await getManager();
+    
   
    
   } catch (err) {
@@ -112,13 +113,15 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
   }
 
   Future getTotalPlayers() async {
+
+    
     try {
       final result = await client?.call(
           contract: contract!,
           function: contract!.function("getTotalMapping"),
           params: []);
 
-          print(result);
+   players.clear();
 
       if (result != null) {
 
@@ -130,6 +133,7 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
           update();
         }
       }
+      totalBalance();
     } catch (error) {
       Get.snackbar("Error", error.toString());
     }
@@ -143,8 +147,10 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
       await contractFunction(
           "enter", [nameController.text], addressController.text, value);
 
-      
+      Get.snackbar("Success","You have been added to the lottery");
+
     } catch (error) {
+    
     
       Get.snackbar("Error", error.toString());
     }
@@ -153,34 +159,19 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
     update();
   }
 
-  Future totalBalance() async {
-    final funciton = contract?.function("totalBalance");
 
-    final res = await client?.call(
-      contract: contract!,
-      function: funciton!,
-      params: [],
-    );
-
-    if (res != null) {
-      final weiValue = BigInt.parse("${res[0]}");
-      balance = EtherAmount.fromBigInt(EtherUnit.wei, weiValue)
-          .getValueInUnit(EtherUnit.ether);
-    }
-
-    update();
-  }
 
   pickWinner() async {
     try {
       await contractFunction("pickWinner", [], addressController.text, null);
+      
 
     } catch (error) {
       Get.snackbar("Error", error.toString());
     }
   }
 
- 
+ /*
   listenToAddPlayerEvent() {
     client
         ?.events(FilterOptions.events(
@@ -188,24 +179,25 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
           event: addPlayerEvent!,
         ))
         .take(1)
-        .listen((event) {
+        .listen((event)async {
 
 
       final decoded = addPlayerEvent?.decodeResults(event.topics!, event.data!);
 
       final map = decoded![0].asMap();
+       players.add(Player.fromMap(map));
 
-      players.add(Player.fromMap(map));
-
-      totalBalance();
-
+     await totalBalance();
+   
       update();
     }).onError((error){
 
-      print(error);
+  Get.snackbar("Error", error);
 
     });
   }
+
+  */
 
   listenToPickWinnerEvent() {
     client
@@ -221,6 +213,7 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
       final map = decoded![0].asMap();
 
       final winner = Player.fromMap(map);
+
 
       Get.defaultDialog(
           barrierDismissible: false,
@@ -238,14 +231,34 @@ Future<BigInt> getEstimatedGasLimit(Credentials credentials)async{
             ],
           ),
           onConfirm: () async {
+        players.clear();
+        addressController.clear();
+        balance=0;
+      update();
+
             Get.back();
-        this.players.clear();
+
           });
 
-      update();
 
   
     });
   }
+  Future totalBalance() async {
+    final funciton = contract?.function("totalBalance");
 
+    final res = await client?.call(
+      contract: contract!,
+      function: funciton!,
+      params: [],
+    );
+
+    if (res != null) {
+      final weiValue = BigInt.parse("${res[0]}");
+      balance = EtherAmount.fromBigInt(EtherUnit.wei, weiValue)
+          .getValueInUnit(EtherUnit.ether);
+    }
+
+    update();
+  }
 }

@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
           return Scaffold(
             floatingActionButton: FloatingActionButton(
               onPressed: controller.getTotalPlayers,
-              child: const Icon(Icons.abc),
+              child: const Icon(Icons.refresh),
             ),
             appBar: AppBar(
               centerTitle: true,
@@ -50,29 +50,31 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
 
-                        
                     SizedBox(
                       width: Get.width * 0.7,
-                      child: Card(
-                          child: Padding(
+                      child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Column(
-                          children: [
-                            const Icon(
-                              Icons.sentiment_satisfied_alt,
-                              size: 100,
-                            ),
-                            Text(
-                              'Total Contribution ${controller.balance} Ether',
-                              style: context.textTheme.titleMedium,
-                            ),
-                          ],
+                      children: [
+                        const Icon(
+                          Icons.sentiment_satisfied_alt,
+                          size: 100,
                         ),
-                      )),
+                        SizedBox(height: 8,),
+                        Text(
+                          'Total Contribution',
+                          style: context.textTheme.titleSmall,
+                        ),
+                        Text("${controller.balance} Ether",style: context.theme.textTheme.displaySmall,)
+                      ],
+                        ),
+                      ),
                     ),
                     const SizedBox(
                       height: 32,
                     ),
+
+                    if(controller.players.length<3)
                     TextField(
                       controller: controller.nameController,
                       decoration: const InputDecoration(
@@ -89,7 +91,7 @@ class HomeScreen extends StatelessWidget {
                       decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.key),
-                          labelText: 'Paste your address'),
+                          labelText: 'Paste your key'),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -102,9 +104,17 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(
                       height: 32,
                     ),
-                    if (controller.players.isNotEmpty)
-                      Column(
-                        children: controller.players
+
+          if(controller.players.isEmpty)
+         Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+
+          Icon(Icons.info,size: 50,),
+          Text("No Player")
+         ],),
+                    ...
+                    controller.players
                             .map((e) => ListTile(
                                 tileColor: e.playerAddress == controller.manager
                                     ? const Color.fromARGB(255, 136, 13, 4)
@@ -127,8 +137,8 @@ class HomeScreen extends StatelessWidget {
                                         label: const Text(
                                             "Pick Winner"))
                                     : null))
-                            .toList(),
-                      )
+                            .toList()
+                      
                   ],
                 ),
                 Obx(() => controller.isLoading.isTrue

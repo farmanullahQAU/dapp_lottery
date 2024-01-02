@@ -39,6 +39,8 @@ dependencies:
   get: ^4.6.6
   http: 
   flutter_dotenv: ^5.1.0
+  walletconnect_flutter_v2: ^2.1.9
+  url_launcher: ^6.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

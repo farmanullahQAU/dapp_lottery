@@ -49,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                 ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-
+TextButton(onPressed:controller.metamaskAuth, child: Text("Metamask login")),
                     SizedBox(
                       width: Get.width * 0.7,
                       child: Padding(

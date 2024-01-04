@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import 'package:convert/convert.dart'; // Import the 'convert' package for hex encoding
 import 'package:dapp2/model.dart';
 import 'package:dapp2/utils/constants/wallet_constants.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +10,9 @@ import 'package:get/get.dart';
 import 'package:http/http.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:walletconnect_flutter_v2/walletconnect_flutter_v2.dart';
-import 'package:convert/convert.dart'; // Import the 'convert' package for hex encoding
-
 import 'package:web3dart/web3dart.dart';
 
+import 'models/chain_metadata.dart';
 import 'utils/helper/helper_functions.dart';
 
 enum WalletStatus {
@@ -26,7 +27,9 @@ enum WalletStatus {
 }
 
 class HomeController extends GetxController {
-  late SignClient wcClient;
+  Rx<WalletStatus>? currentState;
+
+  late Web3App wcClient;
   final ChainMetadata _chainMetadata = WalletConstants.sepoliaTestnetMetaData;
   final TextEditingController addressController =
       TextEditingController(text: "");
@@ -261,7 +264,7 @@ class HomeController extends GetxController {
   Future<bool> initialize() async {
     bool isInitialize = false;
     try {
-      wcClient = await SignClient.createInstance(
+      wcClient = await Web3App.createInstance(
         relayUrl: _chainMetadata.relayUrl,
         projectId: _chainMetadata.projectId,
         metadata: PairingMetadata(
@@ -276,23 +279,6 @@ class HomeController extends GetxController {
       debugPrint("Catch wallet initialize error $err");
     }
     return isInitialize;
-  }
-
-  Future<ConnectResponse?> connect() async {
-    try {
-      ConnectResponse? resp = await wcClient.connect(requiredNamespaces: {
-        _chainMetadata.type: RequiredNamespace(
-          chains: [_chainMetadata.chainId], // Ethereum chain
-          methods: [_chainMetadata.method], // Requestable Methods
-          events: _chainMetadata.events, // Requestable Events
-        )
-      });
-
-      return resp;
-    } catch (err) {
-      debugPrint("Catch wallet connect error $err");
-    }
-    return null;
   }
 
   Future<SessionData?> authorize(
@@ -329,7 +315,7 @@ class HomeController extends GetxController {
     try {
       final transactionData = Transaction.callContract(
           from: EthereumAddress.fromHex(walletAddress),
-          contract: this.contract!,
+          contract: contract!,
           function: contract!
               .function('enter'), // Adjust based on your contract's function
           parameters: [
@@ -343,27 +329,27 @@ class HomeController extends GetxController {
       Uri? uri = resp.uri;
       if (uri != null) {
         // Now that you have a session, you can request signatures
-        final res = await this.wcClient.request(
-              topic: topic,
-              chainId: _chainMetadata.chainId,
-              request: SessionRequestParams(
-                method: 'eth_sendTransaction',
-                params: [
-                  // unSignedMessage,walletAddress
-                  // transactionData.data,
+        final res = await wcClient.request(
+          topic: topic,
+          chainId: _chainMetadata.chainId,
+          request: SessionRequestParams(
+            method: 'eth_sendTransaction',
+            params: [
+              // unSignedMessage,walletAddress
+              // transactionData.data,
 
-                  {
-                    'from': transactionData.from?.hex,
-                    'to': EthereumAddress.fromHex(contractAddress!).hex,
-                    'value':
-                        '0x${transactionData.value?.getInWei.toRadixString(16)}', // Convert to hex string
-                    'gas': '53552', // Adjust gas as needed
-                    // 'gasPrice': '20000000000', // Adjust gas price as needed
-                    'data': paramJson
-                  },
-                ],
-              ),
-            );
+              {
+                'from': transactionData.from?.hex,
+                'to': EthereumAddress.fromHex(contractAddress!).hex,
+                'value':
+                    '0x${transactionData.value?.getInWei.toRadixString(16)}', // Convert to hex string
+                'gas': '53552', // Adjust gas as needed
+                // 'gasPrice': '20000000000', // Adjust gas price as needed
+                'data': paramJson
+              },
+            ],
+          ),
+        );
 
         print(
             "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr");
@@ -389,7 +375,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> disconnectWallet({required String topic}) async {
-    await wcClient.disconnect(
+    await wcClient.disconnectSession(
         topic: topic, reason: Errors.getSdkError(Errors.USER_DISCONNECTED));
   }
 
@@ -436,7 +422,7 @@ class HomeController extends GetxController {
                     resp,
                     walletAddress,
                     sessionData.topic,
-                    this.contractAddress!,
+                    contractAddress!,
                   );
 
                   if (signatureFromWallet != null &&
@@ -471,28 +457,40 @@ class HomeController extends GetxController {
 
     update();
   }
-}
 
-class ChainMetadata {
-  final String chainId;
-  final String name;
-  final String type;
-  final String method;
-  final List<String> events;
-  final String relayUrl;
-  final String projectId;
-  final String redirectUrl;
-  final String walletConnectUrl;
+  _initWallet() async {
+    wcClient = await Web3App.createInstance(
+      relayUrl: _chainMetadata.relayUrl,
+      projectId: _chainMetadata.projectId,
+      metadata: PairingMetadata(
+          name: "MetaMask",
+          description: "MetaMask login",
+          url: _chainMetadata.walletConnectUrl,
+          icons: ["https://wagmi.sh/icon.png"],
+          redirect: Redirect(universal: _chainMetadata.redirectUrl)),
+    );
 
-  const ChainMetadata({
-    required this.chainId,
-    required this.name,
-    required this.type,
-    required this.method,
-    required this.events,
-    required this.relayUrl,
-    required this.projectId,
-    required this.redirectUrl,
-    required this.walletConnectUrl,
-  });
+    _updateWalletSate(WalletStatus.initialized);
+  }
+
+  Future<ConnectResponse?> connect() async {
+    try {
+      ConnectResponse? resp = await wcClient.connect(requiredNamespaces: {
+        _chainMetadata.type: RequiredNamespace(
+          chains: [_chainMetadata.chainId], // Ethereum chain
+          methods: [_chainMetadata.method], // Requestable Methods
+          events: _chainMetadata.events, // Requestable Events
+        )
+      });
+
+      return resp;
+    } catch (err) {
+      debugPrint("Catch wallet connect error $err");
+    }
+    return null;
+  }
+
+  _updateWalletSate(WalletStatus status) {
+    currentState?.value = status;
+  }
 }

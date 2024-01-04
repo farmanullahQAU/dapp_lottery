@@ -1,4 +1,4 @@
-import '../../homeController.dart';
+import 'package:dapp2/models/chain_metadata.dart';
 
 class WalletConstants {
   // static const mainChainMetaData = ChainMetadata(
@@ -12,17 +12,18 @@ class WalletConstants {
   //   redirectUrl: "metamask://com.example.metamask_login_blog",
   //   walletConnectUrl: "https://walletconnect.com",
   // );
- static const deepLinkMetamask = "metamask://wc?uri=";
+  static const deepLinkMetamask = "metamask://wc?uri=";
 
   static const sepoliaTestnetMetaData = ChainMetadata(
-  type: "eip155",
-  chainId: 'eip155:11155111', // Assuming Sepolia testnet has chainId 42, replace it with the correct value if different
-  name: 'Sepolia Testnet',
-  method: "eth_sendTransaction",
-  events: ["chainChanged", "accountsChanged"],
-  relayUrl: "wss://relay.walletconnect.com",
-  projectId: "68ccdce69aec001e3cd0b33aec530b81",
-  redirectUrl: "metamask://com.example.metamask_login_blog",
-  walletConnectUrl: "https://walletconnect.com",
-);
+    type: "eip155",
+    chainId:
+        'eip155:11155111', // Assuming Sepolia testnet has chainId 42, replace it with the correct value if different
+    name: 'Sepolia Testnet',
+    method: "eth_sendTransaction",
+    events: ["chainChanged", "accountsChanged"],
+    relayUrl: "wss://relay.walletconnect.com",
+    projectId: "68ccdce69aec001e3cd0b33aec530b81",
+    redirectUrl: "metamask://com.example.metamask_login_blog",
+    walletConnectUrl: "https://walletconnect.com",
+  );
 }

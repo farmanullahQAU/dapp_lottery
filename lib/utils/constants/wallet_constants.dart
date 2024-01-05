@@ -16,8 +16,7 @@ class WalletConstants {
 
   static const sepoliaTestnetMetaData = ChainMetadata(
     type: "eip155",
-    chainId:
-        'eip155:11155111', // Assuming Sepolia testnet has chainId 42, replace it with the correct value if different
+    chainId: 'eip155:11155111',
     name: 'Sepolia Testnet',
     method: "eth_sendTransaction",
     events: ["chainChanged", "accountsChanged"],

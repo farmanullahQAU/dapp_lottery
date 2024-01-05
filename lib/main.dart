@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(Icons.refresh),
             ),
             appBar: AppBar(
+              actions: [Text(controller.connectedAddress ?? "")],
               centerTitle: true,
               title: Text(
                 "TrioLotto",
@@ -49,39 +50,49 @@ class HomeScreen extends StatelessWidget {
                 ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-TextButton(onPressed:controller.metamaskAuth, child: Text("Metamask login")),
+                    TextButton(
+                        onPressed: controller.connectMetaMask,
+                        child: const Text("Metamask login")),
+                    TextButton(
+                        onPressed: () => controller.disconnectWallet(
+                            topic: controller.sessionData!.topic),
+                        child: const Text("disconect")),
                     SizedBox(
                       width: Get.width * 0.7,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Column(
-                      children: [
-                        const Icon(
-                          Icons.sentiment_satisfied_alt,
-                          size: 100,
-                        ),
-                        SizedBox(height: 8,),
-                        Text(
-                          'Total Contribution',
-                          style: context.textTheme.titleSmall,
-                        ),
-                        Text("${controller.balance} Ether",style: context.theme.textTheme.displaySmall,)
-                      ],
+                          children: [
+                            const Icon(
+                              Icons.sentiment_satisfied_alt,
+                              size: 100,
+                            ),
+                            const SizedBox(
+                              height: 8,
+                            ),
+                            Text(
+                              'Total Contribution',
+                              style: context.textTheme.titleSmall,
+                            ),
+                            Text(
+                              "${controller.balance} Ether",
+                              style: context.theme.textTheme.displaySmall,
+                            )
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(
                       height: 32,
                     ),
-
-                    if(controller.players.length<3)
-                    TextField(
-                      controller: controller.nameController,
-                      decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
-                          labelText: 'Enter your name'),
-                    ),
+                    if (controller.players.length < 3)
+                      TextField(
+                        controller: controller.nameController,
+                        decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                            labelText: 'Enter your name'),
+                      ),
                     const SizedBox(
                       height: 32,
                     ),
@@ -104,41 +115,39 @@ TextButton(onPressed:controller.metamaskAuth, child: Text("Metamask login")),
                     const SizedBox(
                       height: 32,
                     ),
-
-          if(controller.players.isEmpty)
-         Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-
-          Icon(Icons.info,size: 50,),
-          Text("No Player")
-         ],),
-                    ...
-                    controller.players
-                            .map((e) => ListTile(
-                                tileColor: e.playerAddress == controller.manager
-                                    ? const Color.fromARGB(255, 136, 13, 4)
-                                    : null,
-                                leading: CircleAvatar(
-                                    child: Text(e.playerName.characters.first
-                                        .toUpperCase())),
-                                title: Text(
-                                  e.playerName,
-                                ),
-                                subtitle: Text(
-                                  e.playerAddress!.hex,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: e.playerAddress == controller.manager
-                                    ? ElevatedButton.icon(
-
-                                      icon: Icon(Icons.touch_app_outlined),
-                                        onPressed: controller.pickWinner,
-                                        label: const Text(
-                                            "Pick Winner"))
-                                    : null))
-                            .toList()
-                      
+                    if (controller.players.isEmpty)
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.info,
+                            size: 50,
+                          ),
+                          Text("No Player")
+                        ],
+                      ),
+                    ...controller.players
+                        .map((e) => ListTile(
+                            tileColor: e.playerAddress == controller.manager
+                                ? const Color.fromARGB(255, 136, 13, 4)
+                                : null,
+                            leading: CircleAvatar(
+                                child: Text(e.playerName.characters.first
+                                    .toUpperCase())),
+                            title: Text(
+                              e.playerName,
+                            ),
+                            subtitle: Text(
+                              e.playerAddress!.hex,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: e.playerAddress == controller.manager
+                                ? ElevatedButton.icon(
+                                    icon: const Icon(Icons.touch_app_outlined),
+                                    onPressed: controller.pickWinner,
+                                    label: const Text("Pick Winner"))
+                                : null))
+                        .toList()
                   ],
                 ),
                 Obx(() => controller.isLoading.isTrue

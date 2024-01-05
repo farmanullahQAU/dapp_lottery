@@ -8,12 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
-import 'package:url_launcher/url_launcher_string.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:walletconnect_flutter_v2/walletconnect_flutter_v2.dart';
 import 'package:web3dart/web3dart.dart';
 
 import 'models/chain_metadata.dart';
-import 'utils/helper/helper_functions.dart';
 
 enum WalletStatus {
   initializing,
@@ -27,9 +26,10 @@ enum WalletStatus {
 }
 
 class HomeController extends GetxController {
-  Rx<WalletStatus>? currentState;
+  WalletStatus? currentState;
 
-  late Web3App wcClient;
+  Web3App? wcClient;
+  String? connectedAddress;
   final ChainMetadata _chainMetadata = WalletConstants.sepoliaTestnetMetaData;
   final TextEditingController addressController =
       TextEditingController(text: "");
@@ -43,7 +43,7 @@ class HomeController extends GetxController {
   DeployedContract? contract;
   ContractEvent? addPlayerEvent;
   ContractEvent? winnerPickedEvent;
-
+  SessionData? sessionData;
   Web3Client? client;
   String rpcUrl = "${dotenv.env['INFURA_URL']}";
   Uri? uri;
@@ -57,7 +57,6 @@ class HomeController extends GetxController {
     client = Web3Client(rpcUrl, Client());
 
     await initData();
-    initialize();
 
     super.onInit();
   }
@@ -261,221 +260,45 @@ class HomeController extends GetxController {
     update();
   } //wallate SignClient wcClient;
 
-  Future<bool> initialize() async {
-    bool isInitialize = false;
-    try {
-      wcClient = await Web3App.createInstance(
-        relayUrl: _chainMetadata.relayUrl,
-        projectId: _chainMetadata.projectId,
-        metadata: PairingMetadata(
-            name: "MetaMask",
-            description: "MetaMask login",
-            url: _chainMetadata.walletConnectUrl,
-            icons: ["https://wagmi.sh/icon.png"],
-            redirect: Redirect(universal: _chainMetadata.redirectUrl)),
-      );
-      isInitialize = true;
-    } catch (err) {
-      debugPrint("Catch wallet initialize error $err");
-    }
-    return isInitialize;
-  }
-
-  Future<SessionData?> authorize(
-      ConnectResponse resp, String unSignedMessage) async {
-    SessionData? sessionData;
-    try {
-      sessionData = await resp.session.future;
-
-      print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsss");
-    } catch (err) {
-      debugPrint("Catch wallet authorize error $err");
-    }
-    return sessionData;
-  }
-
-  Future<String?> sendMessageForSigned(ConnectResponse resp,
-      String walletAddress, String topic, String unSignedMessage) async {
-    print("TTTTTTTTTTTTTTTTTTTTTTTTTTTttoooooooooooooo");
-    print(topic);
-
-    // Construct the transaction data for entering the lottery
-    // final transactionData = Transaction.callContract(
-
-    //   from: EthereumAddress.fromHex(walletAddress),
-
-    //   contract: contract!,
-    //   function: contract!.function('enter'),
-
-    //   parameters: [ "Asif"],
-
-    // );
-    String? signature;
-
-    try {
-      final transactionData = Transaction.callContract(
-          from: EthereumAddress.fromHex(walletAddress),
-          contract: contract!,
-          function: contract!
-              .function('enter'), // Adjust based on your contract's function
-          parameters: [
-            "Aslif "
-          ], // Adjust based on your contract's function parameters
-
-          value: EtherAmount.inWei(BigInt.from(1e15)));
-      print("Trrrrrrrrrrrrrraaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnn");
-      print(transactionData);
-      String paramJson = '0x${hex.encode(transactionData.data!)}';
-      Uri? uri = resp.uri;
-      if (uri != null) {
-        // Now that you have a session, you can request signatures
-        final res = await wcClient.request(
-          topic: topic,
-          chainId: _chainMetadata.chainId,
-          request: SessionRequestParams(
-            method: 'eth_sendTransaction',
-            params: [
-              // unSignedMessage,walletAddress
-              // transactionData.data,
-
-              {
-                'from': transactionData.from?.hex,
-                'to': EthereumAddress.fromHex(contractAddress!).hex,
-                'value':
-                    '0x${transactionData.value?.getInWei.toRadixString(16)}', // Convert to hex string
-                'gas': '53552', // Adjust gas as needed
-                // 'gasPrice': '20000000000', // Adjust gas price as needed
-                'data': paramJson
-              },
-            ],
-          ),
-        );
-
-        print(
-            "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr");
-        print(resp.toString());
-        signature = res.toString();
-      }
-    } catch (err) {
-      debugPrint(
-          "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEeee");
-      debugPrint("Catch SendMessageForSigned error $err");
-    }
-    return signature;
-  }
-
-  Future<bool> onDisplayUri(Uri? uri) async {
-    final link =
-        formatNativeUrl(WalletConstants.deepLinkMetamask, uri.toString());
-    var url = link.toString();
-    if (!await canLaunchUrlString(url)) {
-      return false;
-    }
-    return await launchUrlString(url, mode: LaunchMode.externalApplication);
-  }
+  // Future<bool> onDisplayUri(Uri? uri) async {
+  //   final link =
+  //       formatNativeUrl(WalletConstants.deepLinkMetamask, uri.toString());
+  //   var url = link.toString();
+  //   if (!await canLaunchUrlString(url)) {
+  //     return false;
+  //   }
+  //   return await launchUrlString(url);
+  // }
 
   Future<void> disconnectWallet({required String topic}) async {
-    await wcClient.disconnectSession(
+    await wcClient?.disconnectSession(
         topic: topic, reason: Errors.getSdkError(Errors.USER_DISCONNECTED));
   }
 
   WalletStatus? state;
-
-  void metamaskAuth() async {
-    state = WalletStatus.initializing;
-    bool isInitialize = await initialize();
-
-    if (isInitialize) {
-      state = WalletStatus.initialized;
-
-      ConnectResponse? resp = await connect();
-
-      if (resp != null) {
-        Uri? uri = resp.uri;
-
-        if (uri != null) {
-          bool canLaunch = await onDisplayUri(uri);
-
-          if (!canLaunch) {
-            state = WalletStatus.notInstalled;
-          } else {
-            SessionData? sessionData = await authorize(
-                resp, "this is the unsizgned mesagevvvvvvvvvvvvvvvvvvvvv");
-
-            if (sessionData != null) {
-              state = WalletStatus.successful;
-
-              if (resp.session.isCompleted) {
-                final String walletAddress = NamespaceUtils.getAccount(
-                  sessionData.namespaces.values.first.accounts.first,
-                );
-
-                debugPrint(
-                    "WALLET ADDRESSsssssssssssssssssssssssssssss - $walletAddress");
-
-                bool canLaunch = await onDisplayUri(uri);
-
-                if (!canLaunch) {
-                  state = WalletStatus.notInstalled;
-                } else {
-                  final signatureFromWallet = await sendMessageForSigned(
-                    resp,
-                    walletAddress,
-                    sessionData.topic,
-                    contractAddress!,
-                  );
-
-                  if (signatureFromWallet != null &&
-                      signatureFromWallet != "") {
-                    // _state.value = WalletReceivedSignatureState(
-                    //   signatureFromWallet: signatureFromWallet,
-                    //   signatureFromBk: signatureFromBackend,
-                    //   walletAddress: walletAddress,
-                    //   message: AppConstants.authenticatingPleaseWait,
-                    // );
-
-                    print("lllllllllllllllllllllllllllllllllllllllllllll");
-                    print(signatureFromWallet);
-
-                    state = WalletStatus.receivedSignature;
-                  } else {
-                    state = WalletStatus.userdenied;
-                  }
-
-                  disconnectWallet(topic: sessionData.topic);
-                }
-              }
-            } else {
-              state = WalletStatus.userdenied;
-            }
-          }
-        }
-      }
-    } else {
-      state = WalletStatus.connectError;
-    }
-
-    update();
-  }
 
   _initWallet() async {
     wcClient = await Web3App.createInstance(
       relayUrl: _chainMetadata.relayUrl,
       projectId: _chainMetadata.projectId,
       metadata: PairingMetadata(
-          name: "MetaMask",
-          description: "MetaMask login",
-          url: _chainMetadata.walletConnectUrl,
-          icons: ["https://wagmi.sh/icon.png"],
-          redirect: Redirect(universal: _chainMetadata.redirectUrl)),
+        name: "MetaMask",
+        description: "MetaMask login",
+        url: _chainMetadata.walletConnectUrl,
+        icons: ["https://wagmi.sh/icon.png"],
+        // redirect: Redirect(universal: _chainMetadata.redirectUrl)
+      ),
     );
 
     _updateWalletSate(WalletStatus.initialized);
   }
 
-  Future<ConnectResponse?> connect() async {
+  connectMetaMask() async {
     try {
-      ConnectResponse? resp = await wcClient.connect(requiredNamespaces: {
+      if (wcClient == null) {
+        await _initWallet();
+      }
+      ConnectResponse? resp = await wcClient?.connect(requiredNamespaces: {
         _chainMetadata.type: RequiredNamespace(
           chains: [_chainMetadata.chainId], // Ethereum chain
           methods: [_chainMetadata.method], // Requestable Methods
@@ -483,14 +306,74 @@ class HomeController extends GetxController {
         )
       });
 
-      return resp;
+      Uri? uri = resp?.uri;
+
+      if (uri != null) {
+        // bool canLaunch = await onDisplayUri(uri);
+
+        await launchUrl(uri);
+
+        sessionData = await resp?.session.future;
+
+        if (resp!.session.isCompleted) {
+          connectedAddress = NamespaceUtils.getAccount(
+            sessionData!.namespaces.values.first.accounts.first,
+          );
+
+          // wcClient?.registerEventHandler(
+          //   chainId: _chainMetadata.chainId,
+          //   event: 'accountsChanged',
+          // );
+          // wcClient?.onSessionEvent.subscribe((SessionEvent? session) {
+          //   print("SSSSSSSSSSSSSSSSSSSSSSSSS");
+          //   print(session?.data.toString());
+          // });
+          _updateWalletSate(WalletStatus.successful);
+        }
+      }
     } catch (err) {
       debugPrint("Catch wallet connect error $err");
     }
-    return null;
+  }
+
+  enterToLottery() async {
+    final transactionData = Transaction.callContract(
+        from: EthereumAddress.fromHex(contractAddress!),
+        contract: contract!,
+        function: contract!
+            .function('enter'), // Adjust based on your contract's function
+        parameters: [
+          "Aslif "
+        ], // Adjust based on your contract's function parameters
+
+        value: EtherAmount.inWei(BigInt.from(1e15)));
+    String paramJson = '0x${hex.encode(transactionData.data!)}';
+
+    await wcClient?.request(
+      topic: sessionData!.topic,
+      chainId: _chainMetadata.chainId,
+      request: SessionRequestParams(
+        method: 'eth_sendTransaction',
+        params: [
+          // unSignedMessage,walletAddress
+          // transactionData.data,
+
+          {
+            'from': transactionData.from?.hex,
+            'to': EthereumAddress.fromHex(contractAddress!).hex,
+            'value':
+                '0x${transactionData.value?.getInWei.toRadixString(16)}', // Convert to hex string
+            'gas': '53552', // Adjust gas as needed
+            // 'gasPrice': '20000000000', // Adjust gas price as needed
+            'data': paramJson
+          },
+        ],
+      ),
+    );
   }
 
   _updateWalletSate(WalletStatus status) {
-    currentState?.value = status;
+    currentState = status;
+    update();
   }
 }

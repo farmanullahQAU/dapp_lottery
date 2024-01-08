@@ -62,9 +62,6 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () => controller.disconnectWallet(
                             topic: controller.sessionData!.topic),
                         child: const Text("disconect")),
-                    TextButton(
-                        onPressed: controller.switchNetwork,
-                        child: const Text("switchNetwork")),
                     SizedBox(
                       width: Get.width * 0.7,
                       child: Padding(

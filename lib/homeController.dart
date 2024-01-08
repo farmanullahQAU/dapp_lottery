@@ -320,36 +320,73 @@ class HomeController extends GetxController {
             sessionData!.namespaces.values.first.accounts.first,
           );
 
-          wcClient?.registerEventHandler(
-            chainId: _chainMetadata.chainId,
-            event: 'accountsChanged',
-          );
-          wcClient?.onSessionEvent.subscribe((SessionEvent? session) {
-            print("SSSSSSSSSSSSSSSSSSSSSSSSS");
-            print(session?.data.toString());
-          });
-
-          enterToLottery();
-          _updateWalletSate(WalletStatus.successful);
+          // enterToLottery();
+          // _updateWalletSate(WalletStatus.successful);
         }
+        switchNetwork(resp);
       }
     } catch (err) {
       debugPrint("Catch wallet connect error $err");
     }
   }
 
-  switchNetwork() async {
-    await wcClient?.request(
-      topic: sessionData!.topic,
-      chainId: _chainMetadata.chainId,
-      request: const SessionRequestParams(
-        method: 'wallet_switchEthereumChain',
-        params: [
-          // unSignedMessage,walletAddress
-          // transactionData.data,
-        ],
+  switchNetwork(ConnectResponse resp) async {
+    final AuthRequestResponse authReq = await wcClient!
+        .requestAuth(
+      params: AuthRequestParams(
+        aud: 'http://walletconnect.com/login',
+        domain: 'http://walletconnect.com',
+        chainId: _chainMetadata.chainId,
+        statement: 'Sign in with your wallet!',
       ),
-    );
+      pairingTopic: resp.pairingTopic,
+    )
+        .catchError((err) {
+      print("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ");
+      print(err);
+      Get.snackbar("auth error ", err.toString());
+    });
+
+// Await the auth response using the provided completer
+    final AuthResponse authResponse = await authReq.completer.future;
+    if (authResponse.result != null) {
+      print("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRrrr");
+      // Having a result means you have the signature and it is verified.
+
+      // Retrieve the wallet address from a successful response
+      final walletAddress =
+          AddressUtils.getDidAddress(authResponse.result!.p.iss);
+      print("sssssssssssssssssssssssssssssssssssssssss");
+      print(walletAddress);
+
+      wcClient!.registerEventHandler(
+        chainId: _chainMetadata.chainId,
+        event: 'accountsChanged',
+      );
+      wcClient!.onSessionEvent.subscribe((SessionEvent? session) {
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        print(session);
+      });
+    } else {
+      // Otherwise, you might have gotten a WalletConnectError if there was un issue verifying the signature.
+      final WalletConnectError? error = authResponse.error;
+      // Of a JsonRpcError if something went wrong when signing with the wallet.
+      final JsonRpcError? err = authResponse.jsonRpcError;
+      print("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEeeee");
+      print(err);
+      print(error);
+    }
+
+    // await wcClient?.request(
+    //   topic: sessionData!.topic,
+    //   chainId: _chainMetadata.chainId,
+    //   request: const SessionRequestParams(
+    //     method: 'wallet_switchEthereumChain',
+    //     params: [
+    //       // unSignedMessage,walletAddress
+    //       // transactionData.data,
+    //     ],
+    //   ),
   }
 
   enterToLottery() async {

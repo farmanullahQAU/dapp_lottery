@@ -30,7 +30,7 @@ class HomeController extends GetxController {
 
   Web3App? wcClient;
   String? connectedAddress;
-  final ChainMetadata _chainMetadata = WalletConstants.sepoliaTestnetMetaData;
+  final ChainMetadata _chainMetadata = WalletConstants.mainChainMetaData;
   final TextEditingController addressController =
       TextEditingController(text: "");
 
@@ -320,20 +320,36 @@ class HomeController extends GetxController {
             sessionData!.namespaces.values.first.accounts.first,
           );
 
-          // wcClient?.registerEventHandler(
-          //   chainId: _chainMetadata.chainId,
-          //   event: 'accountsChanged',
-          // );
-          // wcClient?.onSessionEvent.subscribe((SessionEvent? session) {
-          //   print("SSSSSSSSSSSSSSSSSSSSSSSSS");
-          //   print(session?.data.toString());
-          // });
+          wcClient?.registerEventHandler(
+            chainId: _chainMetadata.chainId,
+            event: 'accountsChanged',
+          );
+          wcClient?.onSessionEvent.subscribe((SessionEvent? session) {
+            print("SSSSSSSSSSSSSSSSSSSSSSSSS");
+            print(session?.data.toString());
+          });
+
+          enterToLottery();
           _updateWalletSate(WalletStatus.successful);
         }
       }
     } catch (err) {
       debugPrint("Catch wallet connect error $err");
     }
+  }
+
+  switchNetwork() async {
+    await wcClient?.request(
+      topic: sessionData!.topic,
+      chainId: _chainMetadata.chainId,
+      request: const SessionRequestParams(
+        method: 'wallet_switchEthereumChain',
+        params: [
+          // unSignedMessage,walletAddress
+          // transactionData.data,
+        ],
+      ),
+    );
   }
 
   enterToLottery() async {
@@ -349,7 +365,8 @@ class HomeController extends GetxController {
         value: EtherAmount.inWei(BigInt.from(1e15)));
     String paramJson = '0x${hex.encode(transactionData.data!)}';
 
-    await wcClient?.request(
+    await wcClient
+        ?.request(
       topic: sessionData!.topic,
       chainId: _chainMetadata.chainId,
       request: SessionRequestParams(
@@ -363,13 +380,16 @@ class HomeController extends GetxController {
             'to': EthereumAddress.fromHex(contractAddress!).hex,
             'value':
                 '0x${transactionData.value?.getInWei.toRadixString(16)}', // Convert to hex string
-            'gas': '53552', // Adjust gas as needed
+            // 'gas': '53552', // Adjust gas as needed
             // 'gasPrice': '20000000000', // Adjust gas price as needed
             'data': paramJson
           },
         ],
       ),
-    );
+    )
+        .catchError((ee) {
+      Get.snackbar("Error", ee);
+    });
   }
 
   _updateWalletSate(WalletStatus status) {

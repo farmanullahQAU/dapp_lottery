@@ -51,12 +51,20 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     TextButton(
+                        onPressed: () {
+                          controller.enterToLottery();
+                        },
+                        child: const Text("Enter")),
+                    TextButton(
                         onPressed: controller.connectMetaMask,
-                        child: const Text("Metamask login")),
+                        child: const Text("connect")),
                     TextButton(
                         onPressed: () => controller.disconnectWallet(
                             topic: controller.sessionData!.topic),
                         child: const Text("disconect")),
+                    TextButton(
+                        onPressed: controller.switchNetwork,
+                        child: const Text("switchNetwork")),
                     SizedBox(
                       width: Get.width * 0.7,
                       child: Padding(

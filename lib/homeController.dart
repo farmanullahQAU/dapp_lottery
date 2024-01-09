@@ -16,7 +16,7 @@ import 'models/chain_metadata.dart';
 
 enum WalletStatus {
   initializing,
-  initialized,
+  connected,
   notInstalled,
   successful,
   authenticating,
@@ -57,7 +57,7 @@ class HomeController extends GetxController {
     client = Web3Client(rpcUrl, Client());
 
     await initData();
-
+    await _initWallet();
     super.onInit();
   }
 
@@ -278,6 +278,7 @@ class HomeController extends GetxController {
   WalletStatus? state;
 
   _initWallet() async {
+    _updateWalletSate(WalletStatus.initializing);
     wcClient = await Web3App.createInstance(
       relayUrl: _chainMetadata.relayUrl,
       projectId: _chainMetadata.projectId,
@@ -290,10 +291,28 @@ class HomeController extends GetxController {
       ),
     );
 
-    _updateWalletSate(WalletStatus.initialized);
+    connectMetamask();
   }
 
-  connectMetaMask() async {
+  connectMetamask() {
+    final data = wcClient?.getActiveSessions();
+
+    if (data!.isEmpty) {
+      _connectMetaMask();
+    } else {
+      print("SSSSSSSSSSS");
+      print(data);
+
+      sessionData = data.values.first;
+
+      connectedAddress = NamespaceUtils.getAccount(
+        sessionData!.namespaces.values.first.accounts.first,
+      );
+      _updateWalletSate(WalletStatus.connected);
+    }
+  }
+
+  _connectMetaMask() async {
     try {
       if (wcClient == null) {
         await _initWallet();
@@ -321,13 +340,39 @@ class HomeController extends GetxController {
           );
 
           // enterToLottery();
-          // _updateWalletSate(WalletStatus.successful);
+          _updateWalletSate(WalletStatus.successful);
+
+          wcClient?.onSessionDelete.subscribe((args) {
+            print(args);
+            print("dddddddddddddddddddddddddddddddddddddd");
+          });
         }
+
         switchNetwork(resp);
       }
     } catch (err) {
       debugPrint("Catch wallet connect error $err");
     }
+  }
+
+  personalSignin() async {
+    await wcClient
+        ?.request(
+      topic: sessionData!.topic,
+      chainId: _chainMetadata.chainId,
+      request: SessionRequestParams(
+        method: _chainMetadata.method,
+        params: [
+          {
+            // "data":  '0x${hex.(transactionData.data!)}'
+          }
+        ],
+      ),
+    )
+        .catchError((err) {
+      print("Error:");
+      print(err);
+    });
   }
 
   switchNetwork(ConnectResponse resp) async {
@@ -434,3 +479,38 @@ class HomeController extends GetxController {
     update();
   }
 }
+/*al connectResponse = await _web3app!.connect(
+      optionalNamespaces: {
+        'eip155': const RequiredNamespace(
+          chains: ['eip155:11155111'],
+          // Not every method may be needed for your purposes
+          methods: [
+            // "personal_sign",
+            "eth_sendTransaction",
+            // "eth_accounts",
+            // "eth_requestAccounts",
+            // "eth_sendRawTransaction",
+            // "eth_sign",
+            // "eth_signTransaction",
+            // "eth_signTypedData",
+            // "eth_signTypedData_v3",
+            // "eth_signTypedData_v4",
+            // "wallet_switchEthereumChain",
+            // "wallet_addEthereumChain",
+            // "wallet_getPermissions",
+            // "wallet_requestPermissions",
+            // "wallet_registerOnboarding",
+            // "wallet_watchAsset",
+            // "wallet_scanQRCode",
+          ],
+          // Not every event may be needed for your purposes
+          events: [
+            // "chainChanged",
+            // "accountsChanged",
+            // "message",
+            // "disconnect",
+            // "connect",
+          ],
+        ),
+      },
+    ); */

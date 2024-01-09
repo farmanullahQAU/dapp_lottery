@@ -56,8 +56,11 @@ class HomeScreen extends StatelessWidget {
                         },
                         child: const Text("Enter")),
                     TextButton(
-                        onPressed: controller.connectMetaMask,
+                        onPressed: controller.connectMetamask,
                         child: const Text("connect")),
+                    TextButton(
+                        onPressed: controller.personalSignin,
+                        child: const Text("personal_sign")),
                     TextButton(
                         onPressed: () => controller.disconnectWallet(
                             topic: controller.sessionData!.topic),
@@ -155,11 +158,11 @@ class HomeScreen extends StatelessWidget {
                         .toList()
                   ],
                 ),
-                Obx(() => controller.isLoading.isTrue
+                controller.currentState == WalletStatus.initializing
                     ? const Center(
                         child: CircularProgressIndicator(),
                       )
-                    : const SizedBox())
+                    : const SizedBox()
               ],
             ),
           );

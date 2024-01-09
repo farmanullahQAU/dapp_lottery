@@ -6,7 +6,9 @@ class WalletConstants {
     chainId: 'eip155:1',
     name: 'Ethereum',
     // method: "personal_sign",
-    method: "wallet_switchEthereumChain",
+    // method: "wallet_switchEthereumChain",
+    method: "personal_sign",
+
     events: ["chainChanged", "accountsChanged"],
     relayUrl: "wss://relay.walletconnect.com",
     projectId: "68ccdce69aec001e3cd0b33aec530b81",
